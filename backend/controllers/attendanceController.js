@@ -18,7 +18,7 @@ exports.markAttendance = async (req, res) => {
     if (!assignment || !assignment.isActive) {
       return res.status(404).json({
         success: false,
-        message: 'Invalid assignment'
+        message: 'Invalid Assignment'
       });
     }
 
