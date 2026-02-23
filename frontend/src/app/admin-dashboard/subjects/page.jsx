@@ -406,6 +406,9 @@ export default function SubjectsPage() {
               <Link href="/admin-dashboard/subjects">
                 <SidebarItem icon={<BookOpen />} label="Subjects" active={true} />
               </Link>
+              <Link href="/admin-dashboard/assignsubject">
+                <SidebarItem icon={<BookMarked />} label="Assign Subject" />
+              </Link>
             </nav>
           </div>
 

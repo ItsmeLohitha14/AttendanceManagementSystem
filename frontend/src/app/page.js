@@ -11,12 +11,12 @@ export default function Login() {
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(''); // Add error state for better UX
+  const [error, setError] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(''); // Clear previous errors
+    setError('');
 
     try {
       const res = await fetch('http://localhost:5000/api/auth/login', {
@@ -36,13 +36,11 @@ export default function Login() {
 
       // Store user data
       localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('username', data.user.username);
       localStorage.setItem('role', data.user.role);
+      localStorage.setItem('userId', data.user._id);
       
-      // Store userId and linkedId if available
-      if (data.user._id) {
-        localStorage.setItem('userId', data.user._id);
-      }
       if (data.user.linkedId) {
         localStorage.setItem('linkedId', data.user.linkedId);
       }
@@ -62,7 +60,7 @@ export default function Login() {
           router.push('/dashboard');
       }
     } catch (err) {
-      setError(err.message); // Show error in UI instead of alert
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -70,7 +68,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
-      {/* LEFT SIDE IMAGE - unchanged */}
+      {/* LEFT SIDE IMAGE */}
       <div className="hidden md:flex w-1/2 relative">
         <img
           src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f"
@@ -88,7 +86,6 @@ export default function Login() {
       {/* RIGHT SIDE FORM */}
       <div className="flex w-full md:w-1/2 items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 p-6">
         <div className="w-full max-w-md backdrop-blur-lg bg-white/80 shadow-2xl rounded-2xl p-8 border border-white/30">
-
           {/* Header */}
           <div className="text-center mb-6">
             <h2 className="text-3xl font-bold text-gray-800">SL</h2>
@@ -100,7 +97,7 @@ export default function Login() {
             Login to Your Account
           </h3>
 
-          {/* Error Message - ADD THIS */}
+          {/* Error Message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
               {error}
@@ -155,11 +152,15 @@ export default function Login() {
               )}
             </button>
 
-            {/* Optional: Forgot Password link */}
+            {/* Forgot Password link */}
             <div className="text-center mt-2">
-              <a href="#" className="text-sm text-amber-600 hover:text-amber-700 hover:underline">
+              <button
+                type="button"
+                onClick={() => alert('Please contact your administrator to reset your password.')}
+                className="text-sm text-amber-600 hover:text-amber-700 hover:underline"
+              >
                 Forgot Password?
-              </a>
+              </button>
             </div>
           </form>
         </div>

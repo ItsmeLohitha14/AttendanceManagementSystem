@@ -14,6 +14,7 @@ import {
   LogOut,
   LayoutDashboard,
   BookOpen,
+  BookMarked,
   Layers,
   Users,
   GraduationCap,
@@ -106,7 +107,7 @@ export default function StudentsPage() {
   // Update filtered classes when branch changes
   useEffect(() => {
     if (selectedBranch !== 'all') {
-      const filtered = classes.filter(cls => 
+      const filtered = classes.filter(cls =>
         cls.branch === selectedBranch || cls.branch?._id === selectedBranch
       );
       setFilteredClasses(filtered);
@@ -120,7 +121,7 @@ export default function StudentsPage() {
   // Update filtered sections when class changes
   useEffect(() => {
     if (selectedClass !== 'all') {
-      const filtered = sections.filter(sec => 
+      const filtered = sections.filter(sec =>
         sec.class === selectedClass || sec.class?._id === selectedClass
       );
       setFilteredSections(filtered);
@@ -155,28 +156,28 @@ export default function StudentsPage() {
 
   const applyFilters = () => {
     let filtered = [...allStudents];
-    
+
     if (selectedBranch !== 'all') {
       filtered = filtered.filter(student => {
         const branchId = student.branch?._id || student.branch;
         return branchId === selectedBranch;
       });
     }
-    
+
     if (selectedClass !== 'all') {
       filtered = filtered.filter(student => {
         const classId = student.classRef?._id || student.classRef;
         return classId === selectedClass;
       });
     }
-    
+
     if (selectedSection !== 'all') {
       filtered = filtered.filter(student => {
         const sectionId = student.section?._id || student.section;
         return sectionId === selectedSection;
       });
     }
-    
+
     setStudents(filtered);
   };
 
@@ -263,12 +264,12 @@ export default function StudentsPage() {
 
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'fullName' || name === 'rollNo') {
       // Auto-generate username when name or roll number changes
       const newFullName = name === 'fullName' ? value : formData.fullName;
       const newRollNo = name === 'rollNo' ? value : formData.rollNo;
-      
+
       if (newFullName && newRollNo) {
         const generatedUsername = generateUsername(newFullName, newRollNo);
         setFormData(prev => ({
@@ -298,7 +299,7 @@ export default function StudentsPage() {
         classRef: '',
         section: ''
       }));
-      
+
       if (value) {
         const branchClasses = await fetchClassesByBranch(value);
         setAvailableClasses(branchClasses);
@@ -311,7 +312,7 @@ export default function StudentsPage() {
         ...prev,
         section: ''
       }));
-      
+
       if (value) {
         const classSections = await fetchSectionsByClass(value);
         setAvailableSections(classSections);
@@ -343,11 +344,11 @@ export default function StudentsPage() {
 
   const openEditModal = async (student) => {
     setEditingStudent(student);
-    
+
     const branchId = student.branch?._id || student.branch;
     const classId = student.classRef?._id || student.classRef;
     const sectionId = student.section?._id || student.section;
-    
+
     setFormData({
       fullName: student.fullName || '',
       rollNo: student.rollNo || '',
@@ -416,43 +417,43 @@ export default function StudentsPage() {
         return false;
       }
     }
-    
+
     if (!formData.fullName?.trim()) {
       setError('Full name is required');
       return false;
     }
-    
+
     if (!formData.rollNo?.trim()) {
       setError('Roll number is required');
       return false;
     }
-    
+
     if (!formData.parentName?.trim()) {
       setError('Parent name is required');
       return false;
     }
-    
+
     if (!formData.parentMobile?.trim()) {
       setError('Parent mobile number is required');
       return false;
     }
-    
+
     const mobileRegex = /^[0-9]{10}$/;
     if (!mobileRegex.test(formData.parentMobile.replace(/\D/g, ''))) {
       setError('Please enter a valid 10-digit mobile number');
       return false;
     }
-    
+
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setSubmitting(true);
     setError('');
     setSuccessMessage('');
@@ -476,7 +477,7 @@ export default function StudentsPage() {
         if (response && response.success) {
           setSuccessMessage('Student updated successfully!');
           await fetchAllStudents();
-          
+
           setTimeout(() => {
             setShowModal(false);
             setSuccessMessage('');
@@ -504,7 +505,7 @@ export default function StudentsPage() {
         if (response && response.success) {
           setSuccessMessage('Student created successfully!');
           await fetchAllStudents();
-          
+
           // Show credentials modal with the generated credentials
           const newStudent = response.data || response.student;
           if (newStudent) {
@@ -515,7 +516,7 @@ export default function StudentsPage() {
               rollNo: formData.rollNo
             });
           }
-          
+
           setShowModal(false);
           setSuccessMessage('');
         }
@@ -569,7 +570,7 @@ export default function StudentsPage() {
   // Filter students based on search
   const filteredStudents = students.filter(student => {
     if (!searchTerm) return true;
-    
+
     const searchLower = searchTerm.toLowerCase();
     return (
       student.fullName?.toLowerCase().includes(searchLower) ||
@@ -584,22 +585,28 @@ export default function StudentsPage() {
 
   const getBranchName = (branch) => {
     if (!branch) return 'N/A';
-    if (typeof branch === 'object') return branch.branchName || 'Unknown';
-    const found = branches.find(b => b._id === branch);
+    if (typeof branch === 'object' && branch !== null) {
+      return branch.branchName || 'Unknown';
+    }
+    const found = branches.find(b => b && b._id === branch);
     return found ? found.branchName : 'Unknown Branch';
   };
 
   const getClassName = (cls) => {
     if (!cls) return 'N/A';
-    if (typeof cls === 'object') return cls.className || 'Unknown';
-    const found = classes.find(c => c._id === cls);
+    if (typeof cls === 'object' && cls !== null) {
+      return cls.className || 'Unknown';
+    }
+    const found = classes.find(c => c && c._id === cls);
     return found ? found.className : 'Unknown Class';
   };
 
   const getSectionName = (section) => {
     if (!section) return 'N/A';
-    if (typeof section === 'object') return section.sectionName || 'Unknown';
-    const found = sections.find(s => s._id === section);
+    if (typeof section === 'object' && section !== null) {
+      return section.sectionName || 'Unknown';
+    }
+    const found = sections.find(s => s && s._id === section);
     return found ? found.sectionName : 'Unknown Section';
   };
 
@@ -661,6 +668,9 @@ export default function StudentsPage() {
               </Link>
               <Link href="/admin-dashboard/subjects">
                 <SidebarItem icon={<BookOpen />} label="Subjects" />
+              </Link>
+              <Link href="/admin-dashboard/assignsubject">
+                <SidebarItem icon={<BookMarked />} label="Assign Subject" />
               </Link>
             </nav>
           </div>
@@ -1090,7 +1100,7 @@ export default function StudentsPage() {
                     Login Credentials
                   </h4>
                   <p className="text-sm text-gray-500 mb-3 bg-blue-50 p-3 rounded-lg">
-                    These credentials will be used by the student to login to the system. 
+                    These credentials will be used by the student to login to the system.
                     Username is auto-generated based on name and roll number.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1395,11 +1405,10 @@ export default function StudentsPage() {
 function SidebarItem({ icon, label, active }) {
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition ${
-        active
+      className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition ${active
           ? 'bg-amber-500 text-white'
           : 'hover:bg-gray-700 text-gray-300'
-      }`}
+        }`}
     >
       {icon}
       {label}

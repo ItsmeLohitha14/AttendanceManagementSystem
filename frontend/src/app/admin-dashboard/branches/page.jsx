@@ -15,6 +15,7 @@ import {
   X,
   LogOut,
   LayoutDashboard,
+  BookMarked,
   BookOpen,
   Layers,
   Users,
@@ -34,7 +35,7 @@ export default function BranchesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  
+
   // Form state
   const [formData, setFormData] = useState({
     schoolName: '',
@@ -110,10 +111,10 @@ export default function BranchesPage() {
     setSubmitting(true);
     setError('');
     setSuccessMessage('');
-    
+
     try {
       let response;
-      
+
       if (editingBranch) {
         // Update branch
         response = await apiRequest(`/branches/${editingBranch._id}`, {
@@ -127,11 +128,11 @@ export default function BranchesPage() {
           body: JSON.stringify(formData)
         });
       }
-      
+
       if (response && response.success) {
         setSuccessMessage(editingBranch ? 'Branch updated successfully!' : 'Branch created successfully!');
         await fetchBranches();
-        
+
         setTimeout(() => {
           setShowModal(false);
           setSuccessMessage('');
@@ -141,7 +142,7 @@ export default function BranchesPage() {
       }
     } catch (error) {
       console.error('Error saving branch:', error);
-      
+
       if (error.message?.includes('already exists')) {
         setError('A branch with this name already exists. Please use a different name.');
       } else {
@@ -154,13 +155,13 @@ export default function BranchesPage() {
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this branch? This action cannot be undone.')) return;
-    
+
     try {
       setError('');
       const response = await apiRequest(`/branches/${id}`, {
         method: 'DELETE'
       });
-      
+
       if (response && response.success) {
         setSuccessMessage('Branch deleted successfully!');
         await fetchBranches();
@@ -175,53 +176,53 @@ export default function BranchesPage() {
   };
 
   // Update the toggleStatus function
-const toggleStatus = async (branch) => {
-  const newStatus = branch.status === 'active' ? 'inactive' : 'active';
-  
-  try {
-    setError('');
-    console.log('Toggling status:', branch._id, 'from', branch.status, 'to', newStatus);
-    
-    const response = await apiRequest(`/branches/${branch._id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ 
-        schoolName: branch.schoolName,
-        branchName: branch.branchName,
-        location: branch.location || '',
-        status: newStatus 
-      })
-    });
-    
-    console.log('Toggle response:', response);
-    
-    if (response && response.success) {
-      await fetchBranches();
-      setSuccessMessage(`Branch ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`);
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } else {
-      setError(response?.message || 'Status update failed');
+  const toggleStatus = async (branch) => {
+    const newStatus = branch.status === 'active' ? 'inactive' : 'active';
+
+    try {
+      setError('');
+      console.log('Toggling status:', branch._id, 'from', branch.status, 'to', newStatus);
+
+      const response = await apiRequest(`/branches/${branch._id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          schoolName: branch.schoolName,
+          branchName: branch.branchName,
+          location: branch.location || '',
+          status: newStatus
+        })
+      });
+
+      console.log('Toggle response:', response);
+
+      if (response && response.success) {
+        await fetchBranches();
+        setSuccessMessage(`Branch ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response?.message || 'Status update failed');
+      }
+    } catch (error) {
+      console.error('Error toggling status:', error);
+
+      // Handle specific error cases
+      if (error.message?.includes('already exists')) {
+        // This is the duplicate branch name error
+        setError('Cannot update status due to branch name conflict. Please check if another branch has the same name.');
+      } else if (error.status === 400) {
+        setError('Bad request. Please check the data and try again.');
+      } else if (error.status === 404) {
+        setError('Branch not found. It may have been deleted.');
+      } else if (error.message?.includes('connect')) {
+        setError('Cannot connect to server. Please check your connection.');
+      } else {
+        setError(error.message || 'Error updating status. Please try again.');
+      }
     }
-  } catch (error) {
-    console.error('Error toggling status:', error);
-    
-    // Handle specific error cases
-    if (error.message?.includes('already exists')) {
-      // This is the duplicate branch name error
-      setError('Cannot update status due to branch name conflict. Please check if another branch has the same name.');
-    } else if (error.status === 400) {
-      setError('Bad request. Please check the data and try again.');
-    } else if (error.status === 404) {
-      setError('Branch not found. It may have been deleted.');
-    } else if (error.message?.includes('connect')) {
-      setError('Cannot connect to server. Please check your connection.');
-    } else {
-      setError(error.message || 'Error updating status. Please try again.');
-    }
-  }
-};
+  };
 
   // Filter branches based on search
-  const filteredBranches = branches.filter(branch => 
+  const filteredBranches = branches.filter(branch =>
     branch.schoolName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     branch.branchName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (branch.location && branch.location.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -274,6 +275,9 @@ const toggleStatus = async (branch) => {
               <Link href="/admin-dashboard/subjects">
                 <SidebarItem icon={<BookOpen />} label="Subjects" />
               </Link>
+              <Link href="/admin-dashboard/assignsubject">
+                <SidebarItem icon={<BookMarked />} label="Assign Subject"/>
+              </Link>
             </nav>
           </div>
 
@@ -309,7 +313,7 @@ const toggleStatus = async (branch) => {
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
               <AlertCircle size={20} />
               <span>{error}</span>
-              <button 
+              <button
                 onClick={() => setError('')}
                 className="ml-auto text-red-500 hover:text-red-700"
               >
@@ -362,11 +366,10 @@ const toggleStatus = async (branch) => {
                       <td className="px-6 py-4 text-sm text-gray-900">{branch.branchName}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">{branch.location || 'Not specified'}</td>
                       <td className="px-6 py-4 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          branch.status === 'active' 
-                            ? 'bg-green-100 text-green-700' 
+                        <span className={`px-2 py-1 rounded-full text-xs ${branch.status === 'active'
+                            ? 'bg-green-100 text-green-700'
                             : 'bg-red-100 text-red-700'
-                        }`}>
+                          }`}>
                           {branch.status || 'active'}
                         </span>
                       </td>
@@ -374,11 +377,10 @@ const toggleStatus = async (branch) => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => toggleStatus(branch)}
-                            className={`p-1 rounded transition ${
-                              branch.status === 'active'
+                            className={`p-1 rounded transition ${branch.status === 'active'
                                 ? 'text-green-600 hover:bg-green-100'
                                 : 'text-gray-600 hover:bg-gray-100'
-                            }`}
+                              }`}
                             title={branch.status === 'active' ? 'Deactivate' : 'Activate'}
                           >
                             {branch.status === 'active' ? <Unlock size={18} /> : <Lock size={18} />}
@@ -547,11 +549,10 @@ const toggleStatus = async (branch) => {
 function SidebarItem({ icon, label, active }) {
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition ${
-        active
+      className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition ${active
           ? 'bg-amber-500 text-white'
           : 'hover:bg-gray-700 text-gray-300'
-      }`}
+        }`}
     >
       {icon}
       {label}

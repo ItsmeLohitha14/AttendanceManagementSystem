@@ -11,73 +11,49 @@ export async function apiRequest(endpoint, options = {}) {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
-  // Ensure method is a valid string
   const method = options.method || 'GET';
   
-  // Validate that method is a string
   if (typeof method !== 'string') {
     console.error('Invalid HTTP method:', method);
     throw new Error('Invalid HTTP method provided');
   }
 
   const config = {
-    method: method.toUpperCase(), // Ensure method is uppercase
+    method: method.toUpperCase(),
     headers: {
       ...defaultHeaders,
       ...options.headers,
     },
-    // Add credentials for cookies if needed
     credentials: 'include',
   };
 
-  // Only add body for non-GET requests
   if (options.body && method.toUpperCase() !== 'GET' && method.toUpperCase() !== 'HEAD') {
     config.body = options.body;
   }
 
-  // Add timeout to prevent hanging requests
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   config.signal = controller.signal;
 
   try {
     const url = `${BASE_URL}${endpoint}`;
     console.log(`Making ${config.method} request to:`, url);
-    if (config.body && config.method !== 'GET') {
-      try {
-        console.log('Request body:', JSON.parse(config.body));
-      } catch (e) {
-        console.log('Request body (raw):', config.body);
-      }
-    }
     
     const res = await fetch(url, config);
-    clearTimeout(timeoutId); // Clear timeout on successful response
+    clearTimeout(timeoutId);
 
     if (res.status === 401) {
-      // Clear all auth data
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      localStorage.removeItem('role');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('linkedId');
-      localStorage.removeItem('schoolName');
-      localStorage.removeItem('branchName');
-      
-      // Check if we're not already on the login page
+      localStorage.clear();
       if (!window.location.pathname.includes('/')) {
         window.location.href = '/';
       }
-      
       throw new Error('Session expired. Please login again.');
     }
 
-    // Handle 204 No Content (successful delete, etc.)
     if (res.status === 204) {
       return { success: true, data: null };
     }
 
-    // Try to parse the response as JSON
     let data;
     const contentType = res.headers.get('content-type');
     
@@ -89,11 +65,9 @@ export async function apiRequest(endpoint, options = {}) {
         throw new Error('Invalid JSON response from server');
       }
     } else {
-      // If not JSON, get text
       const text = await res.text();
       console.warn(`Server returned non-JSON response (${res.status}):`, text.substring(0, 200));
       
-      // For successful responses with text, wrap it in an object
       if (res.ok) {
         return { 
           success: true, 
@@ -109,13 +83,11 @@ export async function apiRequest(endpoint, options = {}) {
     console.log('Response data:', data);
     
     if (!res.ok) {
-      // Extract error message from various possible locations
       const errorMessage = 
         data.message || 
         data.error || 
         (typeof data === 'string' ? data : `Request failed with status ${res.status}`);
       
-      // Log detailed error information
       console.error('API Error Details:', {
         status: res.status,
         statusText: res.statusText,
@@ -124,7 +96,6 @@ export async function apiRequest(endpoint, options = {}) {
         method: config.method
       });
       
-      // Create error object with additional properties
       const error = new Error(errorMessage);
       error.status = res.status;
       error.data = data;
@@ -132,17 +103,16 @@ export async function apiRequest(endpoint, options = {}) {
       throw error;
     }
 
+    // Return the data in a consistent format
     return data;
   } catch (error) {
-    clearTimeout(timeoutId); // Clear timeout on error as well
+    clearTimeout(timeoutId);
     
-    // Handle abort errors (timeout)
     if (error.name === 'AbortError') {
       console.error('Request timeout:', endpoint);
       throw new Error('Request timeout. Please check your connection and try again.');
     }
     
-    // Handle network errors
     if (error.message === 'Failed to fetch') {
       console.error('Network error - server may be down:', error);
       throw new Error('Unable to connect to server. Please check if the server is running.');
@@ -181,11 +151,7 @@ export async function apiRequestFormData(endpoint, formData, options = {}) {
     const res = await fetch(url, config);
 
     if (res.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      localStorage.removeItem('role');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('linkedId');
+      localStorage.clear();
       window.location.href = '/';
       throw new Error('Session expired. Please login again.');
     }

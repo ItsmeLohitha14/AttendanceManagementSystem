@@ -14,6 +14,7 @@ import {
   LogOut,
   LayoutDashboard,
   BookOpen,
+  BookMarked,
   Layers,
   Users,
   GraduationCap,
@@ -351,6 +352,9 @@ export default function ClassesPage() {
               </Link>
               <Link href="/admin-dashboard/subjects">
                 <SidebarItem icon={<BookOpen />} label="Subjects" />
+              </Link>
+              <Link href="/admin-dashboard/assignsubject">
+                <SidebarItem icon={<BookMarked />} label="Assign Subject"/>
               </Link>
             </nav>
           </div>

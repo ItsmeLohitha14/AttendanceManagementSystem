@@ -18,8 +18,9 @@ import {
   BookOpen,
   Layers,
   Users,
-    Grid,
+  Grid,
   GraduationCap,
+  BookMarked,
   AlertCircle,
   Phone,
   Eye,
@@ -39,7 +40,7 @@ export default function TeachersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  
+
   // Form state - matching backend schema
   const [formData, setFormData] = useState({
     fullName: '',
@@ -127,10 +128,10 @@ export default function TeachersPage() {
     setSubmitting(true);
     setError('');
     setSuccessMessage('');
-    
+
     try {
       let response;
-      
+
       if (editingTeacher) {
         // Update teacher - only send fields that can be updated
         const updateData = {
@@ -138,7 +139,7 @@ export default function TeachersPage() {
           salary: formData.salary ? parseFloat(formData.salary) : undefined,
           phone: formData.phone
         };
-        
+
         response = await apiRequest(`/teachers/${editingTeacher._id}`, {
           method: 'PUT',
           body: JSON.stringify(updateData)
@@ -152,18 +153,18 @@ export default function TeachersPage() {
           username: formData.username,
           password: formData.password
         };
-        
+
         response = await apiRequest('/teachers', {
           method: 'POST',
           body: JSON.stringify(createData)
         });
       }
-      
+
       // Handle different response formats
       if (response && response.success) {
         setSuccessMessage(editingTeacher ? 'Teacher updated successfully!' : 'Teacher created successfully!');
         await fetchTeachers();
-        
+
         // Close modal after short delay to show success message
         setTimeout(() => {
           setShowModal(false);
@@ -173,7 +174,7 @@ export default function TeachersPage() {
         // If response is directly the teacher object
         setSuccessMessage(editingTeacher ? 'Teacher updated successfully!' : 'Teacher created successfully!');
         await fetchTeachers();
-        
+
         setTimeout(() => {
           setShowModal(false);
           setSuccessMessage('');
@@ -183,7 +184,7 @@ export default function TeachersPage() {
       }
     } catch (error) {
       console.error('Error saving teacher:', error);
-      
+
       // Handle specific error messages
       if (error.message && error.message.includes('username already exists')) {
         setError('Username already exists. Please choose a different username.');
@@ -197,17 +198,17 @@ export default function TeachersPage() {
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this teacher? This action cannot be undone and will remove the teacher and their login credentials.')) return;
-    
+
     try {
       setError('');
       const response = await apiRequest(`/teachers/${id}`, {
         method: 'DELETE'
       });
-      
+
       if (response && response.success) {
         setSuccessMessage('Teacher deleted successfully!');
         await fetchTeachers();
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
@@ -220,7 +221,7 @@ export default function TeachersPage() {
   };
 
   // Filter teachers based on search
-  const filteredTeachers = teachers.filter(teacher => 
+  const filteredTeachers = teachers.filter(teacher =>
     teacher.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     teacher.phone?.includes(searchTerm) ||
     (teacher.salary && teacher.salary.toString().includes(searchTerm))
@@ -273,6 +274,9 @@ export default function TeachersPage() {
               <Link href="/admin-dashboard/subjects">
                 <SidebarItem icon={<BookOpen />} label="Subjects" />
               </Link>
+              <Link href="/admin-dashboard/assignsubject">
+                <SidebarItem icon={<BookMarked />} label="Assign Subject" />
+              </Link>
             </nav>
           </div>
 
@@ -308,7 +312,7 @@ export default function TeachersPage() {
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
               <AlertCircle size={20} />
               <span>{error}</span>
-              <button 
+              <button
                 onClick={() => setError('')}
                 className="ml-auto text-red-500 hover:text-red-700"
               >
@@ -641,11 +645,10 @@ export default function TeachersPage() {
 function SidebarItem({ icon, label, active }) {
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition ${
-        active
+      className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition ${active
           ? 'bg-amber-500 text-white'
           : 'hover:bg-gray-700 text-gray-300'
-      }`}
+        }`}
     >
       {icon}
       {label}

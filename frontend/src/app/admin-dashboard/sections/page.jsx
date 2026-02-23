@@ -14,6 +14,7 @@ import {
   LogOut,
   LayoutDashboard,
   BookOpen,
+  BookMarked,
   Layers,
   Users,
   GraduationCap,
@@ -41,7 +42,7 @@ export default function SectionsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  
+
   // Filter states
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
@@ -211,13 +212,13 @@ export default function SectionsPage() {
       sectionName: section.sectionName || '',
       sectionIncharge: section.sectionIncharge?._id || section.sectionIncharge || ''
     });
-    
+
     // Fetch classes for the branch if available
     const branchId = section.branch?._id || section.branch;
     if (branchId) {
       fetchClassesByBranch(branchId);
     }
-    
+
     setError('');
     setSuccessMessage('');
     setShowModal(true);
@@ -233,22 +234,22 @@ export default function SectionsPage() {
     setSubmitting(true);
     setError('');
     setSuccessMessage('');
-    
+
     try {
       let response;
-      
+
       if (editingSection) {
         // Update section - only send sectionName and sectionIncharge
         const updateData = {};
-        
+
         if (formData.sectionName) {
           updateData.sectionName = formData.sectionName;
         }
-        
+
         if (formData.sectionIncharge) {
           updateData.sectionIncharge = formData.sectionIncharge;
         }
-        
+
         response = await apiRequest(`/sections/${editingSection._id}`, {
           method: 'PUT',
           body: JSON.stringify(updateData)
@@ -260,40 +261,40 @@ export default function SectionsPage() {
           setSubmitting(false);
           return;
         }
-        
+
         if (!formData.classRef) {
           setError('Please select a class');
           setSubmitting(false);
           return;
         }
-        
+
         const createData = {
           branch: formData.branch,
           classRef: formData.classRef,
           sectionName: formData.sectionName
         };
-        
+
         // Only include sectionIncharge if it's provided
         if (formData.sectionIncharge) {
           createData.sectionIncharge = formData.sectionIncharge;
         }
-        
+
         response = await apiRequest('/sections', {
           method: 'POST',
           body: JSON.stringify(createData)
         });
       }
-      
+
       if (response && response.success) {
         setSuccessMessage(editingSection ? 'Section updated successfully!' : 'Section created successfully!');
-        
+
         // Refresh the sections list based on current filters
         if (selectedClass !== 'all') {
           await fetchSectionsByClass(selectedClass);
         } else {
           await fetchSections();
         }
-        
+
         // Close modal after short delay to show success message
         setTimeout(() => {
           setShowModal(false);
@@ -304,7 +305,7 @@ export default function SectionsPage() {
       }
     } catch (error) {
       console.error('Error saving section:', error);
-      
+
       // Handle specific error messages
       if (error.message && error.message.includes('already exists')) {
         setError('A section with this name already exists in the selected class.');
@@ -326,23 +327,23 @@ export default function SectionsPage() {
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this section? This action cannot be undone and may affect associated students.')) return;
-    
+
     try {
       setError('');
       const response = await apiRequest(`/sections/${id}`, {
         method: 'DELETE'
       });
-      
+
       if (response && response.success) {
         setSuccessMessage('Section deleted successfully!');
-        
+
         // Refresh the sections list based on current filters
         if (selectedClass !== 'all') {
           await fetchSectionsByClass(selectedClass);
         } else {
           await fetchSections();
         }
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
@@ -361,7 +362,7 @@ export default function SectionsPage() {
       const sectionBranchId = section.branch?._id || section.branch;
       if (sectionBranchId !== selectedBranch) return false;
     }
-    
+
     // Apply search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -372,7 +373,7 @@ export default function SectionsPage() {
         section.sectionIncharge?.fullName?.toLowerCase().includes(searchLower)
       );
     }
-    
+
     return true;
   });
 
@@ -447,6 +448,9 @@ export default function SectionsPage() {
               <Link href="/admin-dashboard/subjects">
                 <SidebarItem icon={<BookOpen />} label="Subjects" />
               </Link>
+              <Link href="/admin-dashboard/assignsubject">
+                <SidebarItem icon={<BookMarked />} label="Assign Subject"/>
+              </Link>
             </nav>
           </div>
 
@@ -482,7 +486,7 @@ export default function SectionsPage() {
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
               <AlertCircle size={20} />
               <span>{error}</span>
-              <button 
+              <button
                 onClick={() => setError('')}
                 className="ml-auto text-red-500 hover:text-red-700"
               >
@@ -622,8 +626,8 @@ export default function SectionsPage() {
                       {selectedBranch !== 'all' && selectedClass !== 'all'
                         ? 'No sections found for this class. Click "Create Section" to add one.'
                         : selectedBranch !== 'all'
-                        ? 'No sections found for this branch. Click "Create Section" to add one.'
-                        : 'No sections found. Click "Create Section" to add one.'}
+                          ? 'No sections found for this branch. Click "Create Section" to add one.'
+                          : 'No sections found. Click "Create Section" to add one.'}
                     </td>
                   </tr>
                 )}
@@ -878,11 +882,10 @@ export default function SectionsPage() {
 function SidebarItem({ icon, label, active }) {
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition ${
-        active
+      className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition ${active
           ? 'bg-amber-500 text-white'
           : 'hover:bg-gray-700 text-gray-300'
-      }`}
+        }`}
     >
       {icon}
       {label}

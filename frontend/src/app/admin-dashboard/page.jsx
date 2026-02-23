@@ -14,7 +14,8 @@ import {
   GraduationCap,
   Grid,
   LogOut,
-  RefreshCw
+  RefreshCw,
+  BookMarked // Added missing import
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -53,59 +54,80 @@ export default function AdminDashboard() {
       ]);
 
       // Process Branches
-      if (branchesRes.status === 'fulfilled' && branchesRes.value?.success) {
-        // Get only first 2 branches for recent
-        setRecentBranches(branchesRes.value.data.slice(0, 2));
+      if (branchesRes.status === 'fulfilled' && branchesRes.value) {
+        const branchesData = branchesRes.value;
+        // Handle different response structures
+        let branches = [];
+        if (branchesData.success && Array.isArray(branchesData.data)) {
+          branches = branchesData.data;
+        } else if (Array.isArray(branchesData)) {
+          branches = branchesData;
+        }
+        
+        setRecentBranches(branches.slice(0, 2));
         setStats(prev => ({
           ...prev,
-          totalBranches: branchesRes.value.data.length
+          totalBranches: branches.length
         }));
       } else {
         console.error('Branches fetch failed:', branchesRes.reason);
       }
 
       // Process Teachers
-      if (teachersRes.status === 'fulfilled') {
+      if (teachersRes.status === 'fulfilled' && teachersRes.value) {
         const teachersData = teachersRes.value;
-        if (Array.isArray(teachersData)) {
-          // Get only first 2 teachers for recent
-          setRecentTeachers(teachersData.slice(0, 2));
-          setStats(prev => ({ ...prev, totalTeachers: teachersData.length }));
-        } else if (teachersData?.success && Array.isArray(teachersData.data)) {
-          // Get only first 2 teachers for recent
-          setRecentTeachers(teachersData.data.slice(0, 2));
-          setStats(prev => ({ ...prev, totalTeachers: teachersData.data.length }));
+        let teachers = [];
+        
+        if (teachersData.success && Array.isArray(teachersData.data)) {
+          teachers = teachersData.data;
+        } else if (Array.isArray(teachersData)) {
+          teachers = teachersData;
         }
+        
+        setRecentTeachers(teachers.slice(0, 2));
+        setStats(prev => ({ ...prev, totalTeachers: teachers.length }));
       }
 
       // Process Students
-      if (studentsRes.status === 'fulfilled') {
+      if (studentsRes.status === 'fulfilled' && studentsRes.value) {
         const studentsData = studentsRes.value;
-        if (Array.isArray(studentsData)) {
-          setStats(prev => ({ ...prev, totalStudents: studentsData.length }));
-        } else if (studentsData?.success && Array.isArray(studentsData.data)) {
-          setStats(prev => ({ ...prev, totalStudents: studentsData.data.length }));
+        let students = [];
+        
+        if (studentsData.success && Array.isArray(studentsData.data)) {
+          students = studentsData.data;
+        } else if (Array.isArray(studentsData)) {
+          students = studentsData;
         }
+        
+        setStats(prev => ({ ...prev, totalStudents: students.length }));
       }
 
-      // Process Classes - get total count
-      if (classesRes.status === 'fulfilled') {
+      // Process Classes
+      if (classesRes.status === 'fulfilled' && classesRes.value) {
         const classesData = classesRes.value;
-        if (Array.isArray(classesData)) {
-          setStats(prev => ({ ...prev, totalClasses: classesData.length }));
-        } else if (classesData?.success && Array.isArray(classesData.data)) {
-          setStats(prev => ({ ...prev, totalClasses: classesData.data.length }));
+        let classes = [];
+        
+        if (classesData.success && Array.isArray(classesData.data)) {
+          classes = classesData.data;
+        } else if (Array.isArray(classesData)) {
+          classes = classesData;
         }
+        
+        setStats(prev => ({ ...prev, totalClasses: classes.length }));
       }
 
-      // Process Sections - get total count
-      if (sectionsRes.status === 'fulfilled') {
+      // Process Sections
+      if (sectionsRes.status === 'fulfilled' && sectionsRes.value) {
         const sectionsData = sectionsRes.value;
-        if (Array.isArray(sectionsData)) {
-          setStats(prev => ({ ...prev, totalSections: sectionsData.length }));
-        } else if (sectionsData?.success && Array.isArray(sectionsData.data)) {
-          setStats(prev => ({ ...prev, totalSections: sectionsData.data.length }));
+        let sections = [];
+        
+        if (sectionsData.success && Array.isArray(sectionsData.data)) {
+          sections = sectionsData.data;
+        } else if (Array.isArray(sectionsData)) {
+          sections = sectionsData;
         }
+        
+        setStats(prev => ({ ...prev, totalSections: sections.length }));
       }
 
       // Set active sessions (you can implement this based on your needs)
@@ -178,6 +200,9 @@ export default function AdminDashboard() {
               <Link href="/admin-dashboard/subjects">
                 <SidebarItem icon={<BookOpen />} label="Subjects" />
               </Link>
+              <Link href="/admin-dashboard/assignsubject">
+                <SidebarItem icon={<BookMarked />} label="Assign Subject" />
+              </Link>
             </nav>
           </div>
 
@@ -217,47 +242,47 @@ export default function AdminDashboard() {
 
           {/* STATS GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <StatCard 
-              title="Total Branches" 
-              value={stats.totalBranches} 
+            <StatCard
+              title="Total Branches"
+              value={stats.totalBranches}
               color="border-amber-500"
               icon={<Building className="text-amber-500" size={24} />}
             />
-            <StatCard 
-              title="Total Classes" 
-              value={stats.totalClasses} 
+            <StatCard
+              title="Total Classes"
+              value={stats.totalClasses}
               color="border-blue-500"
               icon={<BookOpen className="text-blue-500" size={24} />}
             />
-            <StatCard 
-              title="Total Sections" 
-              value={stats.totalSections} 
+            <StatCard
+              title="Total Sections"
+              value={stats.totalSections}
               color="border-green-500"
               icon={<Layers className="text-green-500" size={24} />}
             />
-            <StatCard 
-              title="Total Students" 
-              value={stats.totalStudents} 
+            <StatCard
+              title="Total Students"
+              value={stats.totalStudents}
               color="border-purple-500"
-              icon={<Users className="text-purple-500" size={24} />}
+              icon={<GraduationCap className="text-purple-500" size={24} />}
             />
-            <StatCard 
-              title="Total Teachers" 
-              value={stats.totalTeachers} 
+            <StatCard
+              title="Total Teachers"
+              value={stats.totalTeachers}
               color="border-orange-500"
               icon={<Users className="text-orange-500" size={24} />}
             />
-            <StatCard 
-              title="Active Sessions" 
-              value={stats.activeSessions} 
+            <StatCard
+              title="Active Sessions"
+              value={stats.activeSessions}
               color="border-red-500"
-              icon={<GraduationCap className="text-red-500" size={24} />}
+              icon={<Users className="text-red-500" size={24} />}
             />
           </div>
 
           {/* RECENT ACTIVITY SECTION */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Branches - Only 2 rows */}
+            {/* Recent Branches */}
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Branches</h3>
               {recentBranches.length > 0 ? (
@@ -266,12 +291,11 @@ export default function AdminDashboard() {
                     <div key={branch._id || idx} className="flex items-center justify-between border-b pb-2 last:border-0">
                       <div>
                         <p className="font-medium text-gray-900">{branch.branchName}</p>
-                        <p className="text-sm text-gray-500">{branch.schoolName}</p>
+                        <p className="text-sm text-gray-500">{branch.schoolName || 'N/A'}</p>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        branch.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {branch.status}
+                      <span className={`text-xs px-2 py-1 rounded-full ${branch.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                        {branch.status || 'active'}
                       </span>
                     </div>
                   ))}
@@ -279,7 +303,7 @@ export default function AdminDashboard() {
               ) : (
                 <p className="text-gray-500 text-center py-4">No branches found</p>
               )}
-              <Link 
+              <Link
                 href="/admin-dashboard/branches"
                 className="mt-4 inline-flex items-center text-amber-500 hover:text-amber-600"
               >
@@ -287,7 +311,7 @@ export default function AdminDashboard() {
               </Link>
             </div>
 
-            {/* Recent Teachers - Only 2 rows */}
+            {/* Recent Teachers */}
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Teachers</h3>
               {recentTeachers.length > 0 ? (
@@ -296,10 +320,10 @@ export default function AdminDashboard() {
                     <div key={teacher._id || idx} className="flex items-center justify-between border-b pb-2 last:border-0">
                       <div>
                         <p className="font-medium text-gray-900">{teacher.fullName || teacher.name}</p>
-                        <p className="text-sm text-gray-500">{teacher.phone || 'No phone'}</p>
+                        <p className="text-sm text-gray-500">{teacher.phone || teacher.email || 'No contact'}</p>
                       </div>
                       <span className="text-xs text-gray-500">
-                        ₹{teacher.salary?.toLocaleString() || 'N/A'}
+                        {teacher.salary ? `₹${teacher.salary.toLocaleString()}` : 'N/A'}
                       </span>
                     </div>
                   ))}
@@ -307,7 +331,7 @@ export default function AdminDashboard() {
               ) : (
                 <p className="text-gray-500 text-center py-4">No teachers found</p>
               )}
-              <Link 
+              <Link
                 href="/admin-dashboard/teachers"
                 className="mt-4 inline-flex items-center text-amber-500 hover:text-amber-600"
               >
