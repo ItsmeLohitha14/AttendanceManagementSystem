@@ -338,7 +338,7 @@ export default function StudentDashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-4">No classes scheduled today</p>
+                <p className="text-gray-500 text-center py-4">No classes have scheduled today</p>
               )}
               
               <Link 
