@@ -11,7 +11,7 @@ export default function StudentDashboard() {
   const [studentName, setStudentName] = useState('');
   const [parentName, setParentName] = useState('');
   const [stats, setStats] = useState({
-    totalClasses: 1,
+    totalClasses: 0,
     presentDays: 0,
     attendancePercentage: 0,
     upcomingClasses: 3
