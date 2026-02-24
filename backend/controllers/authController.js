@@ -11,7 +11,7 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid username or password"
+        message: "username not correct"
       });
     }
 
@@ -21,18 +21,13 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid username or password'
+        message: 'password not correct'
       });
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
-        id: user._id, 
-        username: user.username, 
-        role: user.role,
-        linkedId: user.linkedId 
-      },
+      {id: user._id, username: user.username, role: user.role,linkedId: user.linkedId },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -50,7 +45,7 @@ exports.login = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Login error:', err);
+    console.error(err);
     res.status(500).json({ 
       success: false,
       message: 'Server error' 
@@ -75,7 +70,7 @@ exports.register = async (req, res) => {
     const user = await User.create({
       name,
       username,
-      password, // Will be hashed by pre-save hook
+      password,
       role,
       linkedId
     });

@@ -19,12 +19,13 @@ exports.createBranch = async (req, res) => {
             location: location || '',
             status: status || 'active'
         });
-
+        await branch.save();
         res.status(201).json({
             success: true,
             data: branch,
             message: "Branch created successfully",
         });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({
@@ -68,6 +69,7 @@ exports.getBranchById = async (req, res) => {
             success: true,
             data: branch
         });
+        
     } catch (err) {
         console.error(err);
         res.status(500).json({

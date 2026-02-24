@@ -259,7 +259,3 @@ exports.deleteSection = async (req, res) => {
     });
   }
 };
-
-
-
-
