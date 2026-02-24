@@ -35,8 +35,8 @@ app.use('/api/branches',branchRoutes);
 app.use('/api/classes',classRoutes);
 app.use('/api/sections',sectionRoutes);
 app.use('/api/students',studentRoutes);
-app.use('/api/subject',subjectRoutes);
-app.use('/api/assignment',tsaRoutes);
+app.use('/api/subjects',subjectRoutes);
+app.use('/api/assignsubject',tsaRoutes);
 
 
 const PORT = process.env.PORT || 5000;

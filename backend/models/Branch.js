@@ -1,18 +1,26 @@
-const mongoose=require('mongoose');
+const mongoose = require('mongoose');
 
-const branchSchema=new mongoose.Schema(
+const branchSchema = new mongoose.Schema(
     {
-    schoolName:{
-            type:String,
-            required:true
+        schoolName: {
+            type: String,
+            required: true
+        },
+        branchName: {
+            type: String,
+            required: true
+        },
+        location: {
+            type: String,
+            default: ''
+        },
+        status: {
+            type: String,
+            enum: ['active', 'inactive'],
+            default: 'active'
+        }
     },
-    branchName:{
-        type:String,
-        required:true
-    },
+    { timestamps: true }
+);
 
-}
-,{timestamps:true}
-)
-
-module.exports=mongoose.model('Branch',branchSchema);
+module.exports = mongoose.model('Branch', branchSchema);

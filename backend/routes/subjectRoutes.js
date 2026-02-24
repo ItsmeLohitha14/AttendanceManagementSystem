@@ -1,19 +1,20 @@
-const express=require('express');
-const router=express.Router();
+const express = require('express');
+const router = express.Router();
 
-const authMiddleware=require('../middleware/authMiddleware');
-const subjectController=require('../controllers/subjectController');
+const authMiddleware = require('../middleware/authMiddleware');
+const subjectController = require('../controllers/subjectController');
 
+// Apply authentication middleware to all routes
 router.use(authMiddleware.protect);
 
-router.route('/',authMiddleware.restrictTo('admin'))
-.post(subjectController.createSubject)
-.get(subjectController.getSubjects)
+// Public/Admin routes
+router.route('/')
+  .post(authMiddleware.restrictTo('admin'), subjectController.createSubject)
+  .get(subjectController.getSubjects);
 
-router.route('/:id',authMiddleware.restrictTo('admin'))
-.get(subjectController.getSubjectById)
-.put(subjectController.updateSubject)
-.delete(subjectController.deleteSubject)
+router.route('/:id')
+  .get(subjectController.getSubjectById)
+  .put(authMiddleware.restrictTo('admin'), subjectController.updateSubject)
+  .delete(authMiddleware.restrictTo('admin'), subjectController.deleteSubject);
 
-
-module.exports=router;
+module.exports = router;

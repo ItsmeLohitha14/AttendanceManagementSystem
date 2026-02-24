@@ -1,25 +1,23 @@
-const express=require('express');
-const router=express.Router();
-const authMiddleware=require('../middleware/authMiddleware');
-const studentController=require('../controllers/studentController');
+const express = require('express');
+const router = express.Router();
+const authMiddleware = require('../middleware/authMiddleware');
+const studentController = require('../controllers/studentController');
 
-
+// Protect all routes
 router.use(authMiddleware.protect);
 
-router.post('/',authMiddleware.restrictTo('admin'),studentController.createStudent);
-router.get('/',authMiddleware.restrictTo('admin'),studentController.getStudents);
+// Admin only routes
+router.post('/', authMiddleware.restrictTo('admin'), studentController.createStudent);
+router.get('/', authMiddleware.restrictTo('admin'), studentController.getStudents);
 
-router.route('/:id',authMiddleware.restrictTo('admin'))
-.get(studentController.getStudentById)
-.put(studentController.updateStudent)
-.delete(studentController.deleteStudent);
+// Routes with specific paths - MUST come before dynamic routes
+router.get('/class/:classId', authMiddleware.restrictTo('admin'), studentController.getStudentsByClass);
+router.get('/section/:sectionId', authMiddleware.restrictTo('admin'), studentController.getStudentsBySection);
 
-router.get('/:classId',authMiddleware.restrictTo('admin'),studentController.getStudentsByClass);
+// Dynamic routes - these should come last
+router.route('/:id')
+  .get(authMiddleware.restrictTo('admin'), studentController.getStudentById)
+  .put(authMiddleware.restrictTo('admin'), studentController.updateStudent)
+  .delete(authMiddleware.restrictTo('admin'), studentController.deleteStudent);
 
-router.get('/:sectionId',authMiddleware.restrictTo('admin'),studentController.getStudentsBySection);
-
-
-
-
-module.exports= router;
-
+module.exports = router;
