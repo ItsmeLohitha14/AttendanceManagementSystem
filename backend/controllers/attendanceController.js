@@ -277,5 +277,3 @@ exports.updateStudentAttendance = async (req, res) => {
     });
   }
 };
-
-

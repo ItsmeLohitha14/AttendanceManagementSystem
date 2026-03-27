@@ -1,165 +1,377 @@
 'use client';
-import { useState } from 'react';
-// import { Formik, Form, Field, ErrorMessage } from 'formik';
-// import * as Yup from 'yup';
-// import { useRouter } from 'next/navigation';
 
-export default function Login() {
-//   const [showPassword, setShowPassword] = useState(false);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const router = useRouter();
-  
-//   const Loginvalidation = Yup.object().shape({
-    
-//     username: Yup.string().required("Username is required"),
-//     password: Yup.string().required('Password is required')
+import ProtectedRoute from '../../components/ProtectedRoute';
+import { useState, useEffect } from 'react';
+import { apiRequest } from '../../services/api';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import {
+  LayoutDashboard,
+  Building,
+  BookOpen,
+  Layers,
+  Users,
+  GraduationCap,
+  Grid,
+  LogOut,
+  RefreshCw,
+  BookMarked // Added missing import
+} from 'lucide-react';
 
-    
-//   });
+export default function AdminDashboard() {
+  const router = useRouter();
 
-// const handlesubmit = async (values) => {
-//   setIsLoading(true);
-//   const { username, password } = values;
-  
-//   try {
-//     const response = await fetch('http://localhost:5000/api/auth/login', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify({ username, password }),
+  const [stats, setStats] = useState({
+    totalBranches: 0,
+    totalClasses: 0,
+    totalSections: 0,
+    totalStudents: 0,
+    totalTeachers: 0,
+    activeSessions: 0
+  });
 
-//     });
+  const [recentBranches, setRecentBranches] = useState([]);
+  const [recentTeachers, setRecentTeachers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-//     const data = await response.json();
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-//     if (!data.success) {
-//       throw new Error(data.message || 'Login failed');
-//     }
+      // Fetch all data in parallel for better performance
+      const [branchesRes, teachersRes, studentsRes, classesRes, sectionsRes] = await Promise.allSettled([
+        apiRequest('/branches'),
+        apiRequest('/teachers'),
+        apiRequest('/students'),
+        apiRequest('/classes'),
+        apiRequest('/sections')
+      ]);
 
-//     localStorage.setItem('token', data.token);
-//     localStorage.setItem('username', data.user.username);
-//     localStorage.setItem('role', data.user.role);
-    
-//     router.push(data.user.role === "admin" ? '/admin-dashboard' : '/employee-dashboard');
-//   } 
-//   catch (err) {
-//     alert(err.message);
-//   } 
-//   finally {
-//     setIsLoading(false);
-//   }
-// };
+      // Process Branches
+      if (branchesRes.status === 'fulfilled' && branchesRes.value) {
+        const branchesData = branchesRes.value;
+        // Handle different response structures
+        let branches = [];
+        if (branchesData.success && Array.isArray(branchesData.data)) {
+          branches = branchesData.data;
+        } else if (Array.isArray(branchesData)) {
+          branches = branchesData;
+        }
+        
+        setRecentBranches(branches.slice(0, 2));
+        setStats(prev => ({
+          ...prev,
+          totalBranches: branches.length
+        }));
+      } else {
+        console.error('Branches fetch failed:', branchesRes.reason);
+      }
+
+      // Process Teachers
+      if (teachersRes.status === 'fulfilled' && teachersRes.value) {
+        const teachersData = teachersRes.value;
+        let teachers = [];
+        
+        if (teachersData.success && Array.isArray(teachersData.data)) {
+          teachers = teachersData.data;
+        } else if (Array.isArray(teachersData)) {
+          teachers = teachersData;
+        }
+        
+        setRecentTeachers(teachers.slice(0, 2));
+        setStats(prev => ({ ...prev, totalTeachers: teachers.length }));
+      }
+
+      // Process Students
+      if (studentsRes.status === 'fulfilled' && studentsRes.value) {
+        const studentsData = studentsRes.value;
+        let students = [];
+        
+        if (studentsData.success && Array.isArray(studentsData.data)) {
+          students = studentsData.data;
+        } else if (Array.isArray(studentsData)) {
+          students = studentsData;
+        }
+        
+        setStats(prev => ({ ...prev, totalStudents: students.length }));
+      }
+
+      // Process Classes
+      if (classesRes.status === 'fulfilled' && classesRes.value) {
+        const classesData = classesRes.value;
+        let classes = [];
+        
+        if (classesData.success && Array.isArray(classesData.data)) {
+          classes = classesData.data;
+        } else if (Array.isArray(classesData)) {
+          classes = classesData;
+        }
+        
+        setStats(prev => ({ ...prev, totalClasses: classes.length }));
+      }
+
+      // Process Sections
+      if (sectionsRes.status === 'fulfilled' && sectionsRes.value) {
+        const sectionsData = sectionsRes.value;
+        let sections = [];
+        
+        if (sectionsData.success && Array.isArray(sectionsData.data)) {
+          sections = sectionsData.data;
+        } else if (Array.isArray(sectionsData)) {
+          sections = sectionsData;
+        }
+        
+        setStats(prev => ({ ...prev, totalSections: sections.length }));
+      }
+
+      // Set active sessions (you can implement this based on your needs)
+      setStats(prev => ({ ...prev, activeSessions: 0 }));
+
+    } catch (err) {
+      console.error('Dashboard error:', err);
+      setError('Failed to load dashboard data. Please refresh the page.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push('/');
+  };
+
+  const handleRefresh = () => {
+    fetchDashboardData();
+  };
+
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+          <div className="text-center">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-700">Loading dashboard...</span>
+            </div>
+            <p className="text-sm text-gray-500">Fetching your data</p>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100 p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your account</p>
-        </div>
-        
-        {/* <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="p-8">
-            <Formik
-              initialValues={{ username: '', password: '' }}
-              validationSchema={Loginvalidation}
-              onSubmit={handlesubmit}
+    <ProtectedRoute>
+      <div className="flex min-h-screen bg-gray-100">
+
+        {/* SIDEBAR */}
+        <div className="w-64 bg-[#0f172a] text-white flex flex-col justify-between">
+          <div>
+            <div className="p-6">
+              <h1 className="text-xl font-bold">SL</h1>
+              <p className="text-sm text-gray-400">Admin Portal</p>
+            </div>
+
+            <nav className="space-y-2 px-4">
+              <Link href="/admin-dashboard">
+                <SidebarItem icon={<LayoutDashboard />} label="Dashboard" active={true} />
+              </Link>
+              <Link href="/admin-dashboard/branches">
+                <SidebarItem icon={<Building />} label="Branches" />
+              </Link>
+              <Link href="/admin-dashboard/classes">
+                <SidebarItem icon={<Layers />} label="Classes" />
+              </Link>
+              <Link href="/admin-dashboard/sections">
+                <SidebarItem icon={<Grid />} label="Sections" />
+              </Link>
+              <Link href="/admin-dashboard/students">
+                <SidebarItem icon={<GraduationCap />} label="Students" />
+              </Link>
+              <Link href="/admin-dashboard/teachers">
+                <SidebarItem icon={<Users />} label="Teachers" />
+              </Link>
+              <Link href="/admin-dashboard/subjects">
+                <SidebarItem icon={<BookOpen />} label="Subjects" />
+              </Link>
+              <Link href="/admin-dashboard/assignsubject">
+                <SidebarItem icon={<BookMarked />} label="Assign Subject" />
+              </Link>
+            </nav>
+          </div>
+
+          <div className="p-4">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 w-full px-4 py-2 bg-red-500 rounded-lg hover:bg-red-600 transition"
             >
-              {() => (
-                <Form className="space-y-6">
-                  <div>
-                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                      Username
-                    </label>
-                    <Field
-                      id="username"
-                      name="username"
-                      type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                      placeholder="Enter your username"
-                    />
-                    <ErrorMessage name="username" component="div" className="mt-1 text-sm text-red-600" />
-                  </div>
+              <LogOut size={18} /> Logout
+            </button>
+          </div>
+        </div>
 
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                        Password
-                      </label>
-                      <button 
-                        type="button" 
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="text-sm text-blue-600 hover:text-blue-800"
-                      >
-                        {showPassword ? 'Hide' : 'Show'}
-                      </button>
+        {/* MAIN CONTENT */}
+        <div className="flex-1 p-8 overflow-auto">
+
+          {/* HEADER with Refresh Button */}
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
+              <p className="text-gray-700">Welcome back, Admin!</p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
+            >
+              <RefreshCw size={18} /> Refresh
+            </button>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          {/* STATS GRID */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <StatCard
+              title="Total Branches"
+              value={stats.totalBranches}
+              color="border-amber-500"
+              icon={<Building className="text-amber-500" size={24} />}
+            />
+            <StatCard
+              title="Total Classes"
+              value={stats.totalClasses}
+              color="border-blue-500"
+              icon={<BookOpen className="text-blue-500" size={24} />}
+            />
+            <StatCard
+              title="Total Sections"
+              value={stats.totalSections}
+              color="border-green-500"
+              icon={<Layers className="text-green-500" size={24} />}
+            />
+            <StatCard
+              title="Total Students"
+              value={stats.totalStudents}
+              color="border-purple-500"
+              icon={<GraduationCap className="text-purple-500" size={24} />}
+            />
+            <StatCard
+              title="Total Teachers"
+              value={stats.totalTeachers}
+              color="border-orange-500"
+              icon={<Users className="text-orange-500" size={24} />}
+            />
+            <StatCard
+              title="Active Sessions"
+              value={stats.activeSessions}
+              color="border-red-500"
+              icon={<Users className="text-red-500" size={24} />}
+            />
+          </div>
+
+          {/* RECENT ACTIVITY SECTION */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Branches */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Branches</h3>
+              {recentBranches.length > 0 ? (
+                <div className="space-y-3">
+                  {recentBranches.map((branch, idx) => (
+                    <div key={branch._id || idx} className="flex items-center justify-between border-b pb-2 last:border-0">
+                      <div>
+                        <p className="font-medium text-gray-900">{branch.branchName}</p>
+                        <p className="text-sm text-gray-500">{branch.schoolName || 'N/A'}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full ${branch.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                        {branch.status || 'active'}
+                      </span>
                     </div>
-                    <div className="relative">
-                      <Field
-                        id="password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                        placeholder="Enter your password"
-                      />
-                    </div>
-                    <ErrorMessage name="password" component="div" className="mt-1 text-sm text-red-600" />
-                  </div>
-
-                  <div className="flex items-center justify-between"> */}
-                    {/* <div className="flex items-center">
-                      <input
-                        id="remember-me"
-                        name="remember-me"
-                        type="checkbox"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                        Remember me
-                      </label>
-                    </div> */}
-
-                    {/* <div className="text-sm">
-                      <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                        Forgot password?
-                      </a>
-                    </div>
-                  </div>
-
-                  <div>
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                      {isLoading ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Signing in...
-                        </>
-                      ) : 'Sign in'}
-                    </button>
-                  </div>
-                </Form>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-4">No branches found</p>
               )}
-            </Formik>
-          </div> */}
-          
-          {/* <div className="px-8 py-4 bg-gray-50 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                Contact admin
-              </a>
-            </p>
-          </div> */}
-        {/* </div> */}
+              <Link
+                href="/admin-dashboard/branches"
+                className="mt-4 inline-flex items-center text-amber-500 hover:text-amber-600"
+              >
+                View All ({stats.totalBranches}) →
+              </Link>
+            </div>
+
+            {/* Recent Teachers */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Teachers</h3>
+              {recentTeachers.length > 0 ? (
+                <div className="space-y-3">
+                  {recentTeachers.map((teacher, idx) => (
+                    <div key={teacher._id || idx} className="flex items-center justify-between border-b pb-2 last:border-0">
+                      <div>
+                        <p className="font-medium text-gray-900">{teacher.fullName || teacher.name}</p>
+                        <p className="text-sm text-gray-500">{teacher.phone || teacher.email || 'No contact'}</p>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {teacher.salary ? `₹${teacher.salary.toLocaleString()}` : 'N/A'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-4">No teachers found</p>
+              )}
+              <Link
+                href="/admin-dashboard/teachers"
+                className="mt-4 inline-flex items-center text-amber-500 hover:text-amber-600"
+              >
+                View All ({stats.totalTeachers}) →
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
+    </ProtectedRoute>
+  );
+}
+
+/* Sidebar Item Component */
+function SidebarItem({ icon, label, active }) {
+  return (
+    <div
+      className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer transition ${
+        active
+          ? 'bg-amber-500 text-white'
+          : 'hover:bg-gray-700 text-gray-300'
+      }`}
+    >
+      {icon}
+      {label}
+    </div>
+  );
+}
+
+/* Stat Card Component */
+function StatCard({ title, value, color, icon }) {
+  return (
+    <div className={`bg-white p-6 rounded-xl shadow border-l-4 ${color} relative overflow-hidden hover:shadow-lg transition`}>
+      <div className="absolute right-4 top-4 opacity-20">
+        {icon}
+      </div>
+      <p className="text-gray-600 text-sm font-medium">{title}</p>
+      <h3 className="text-3xl font-bold text-gray-900 mt-2">
+        {value}
+      </h3>
     </div>
   );
 }

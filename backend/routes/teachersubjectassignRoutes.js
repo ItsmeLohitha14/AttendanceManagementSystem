@@ -7,16 +7,17 @@ const authMiddleware=require('../middleware/authMiddleware');
 
 router.use(authMiddleware.protect);
 
-router.route('/',authMiddleware.restrictTo('admin'))
-.post(tsaController.createAssignment)
-.get(tsaController.getAssignments)
+// Admin only routes
+router.post('/', authMiddleware.restrictTo('admin'), tsaController.createAssignment);
+router.get('/', authMiddleware.restrictTo('admin'), tsaController.getAssignments);
 
-router.delete('/:id',authMiddleware.restrictTo('admin'),tsaController.deleteAssignment);
+// Delete assignment (admin only)
+router.delete('/:id', authMiddleware.restrictTo('admin'), tsaController.deleteAssignment);
 
-router.get('/me',tsaController.getMyAssignments);
+// Teacher specific routes
+router.get('/me', tsaController.getMyAssignments);
+router.get('/:teacherId', tsaController.getAssignmentsByTeacher);
 
-router.get('/:teacherId',tsaController.getAssignmentsByTeacher);
-
-module.exports=router;
+module.exports = router;
 
 
